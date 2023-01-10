@@ -31,7 +31,7 @@ builder.Services.AddSwaggerGen(options =>
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
-builder.Services.AddDbContext<PersonaDb>(opt => opt.UseInMemoryDatabase("personaList"));
+builder.Services.AddDbContext<PersonaDb>(opt => opt.UseInMemoryDatabase("UsuarioList"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 //configure the http request pipeline
@@ -51,10 +51,10 @@ app.MapGet("/", () => Results.Redirect("swagger", true))
     .ExcludeFromDescription();
 
 app.MapGet("/personas/listar", async (PersonaDb db) =>
-    await db.usuario.ToListAsync());
+    await db.Usuarios.ToListAsync());
 
 app.MapGet("/personas/buscar/{id}", async (int id, PersonaDb db) =>
-    await db.usuario.FindAsync(id)
+    await db.Usuarios.FindAsync(id)
     is Persona user
        ? Results.Ok(user)
        : Results.NotFound());
@@ -66,7 +66,7 @@ app.MapPost("/personas/agregar", async (Persona user, PersonaDb db) =>
     FluentValidation.Results.ValidationResult result = _pru.Validate(user);
     if (result.IsValid)
     {
-        db.usuario.Add(user);
+        db.Usuarios.Add(user);
         await db.SaveChangesAsync();
         return Results.Created($"/personas/{user.CedulaIdentidad}", user);
     }
@@ -77,18 +77,18 @@ app.MapPost("/personas/agregar", async (Persona user, PersonaDb db) =>
 
 });
 
-app.MapPut("/personas/modificar/{id}", async (int id, Persona inputuser, PersonaDb db) =>
+app.MapPut("/personas/modificar/{id}", async (int id, Persona inputUsuario, PersonaDb db) =>
 {
-    var user = await db.usuario.FindAsync(id);
+    var user = await db.Usuarios.FindAsync(id);
 
     if (user is null) return Results.NotFound();
 
-    user.Nombre = inputuser.Nombre;
-    user.Apellido = inputuser.Apellido;
-    user.Email = inputuser.Email;
-    user.Telefono = inputuser.Telefono;
-    user.FechaNacimiento = inputuser.FechaNacimiento;
-    user.CedulaIdentidad = inputuser.CedulaIdentidad;
+    user.Nombre = inputUsuario.Nombre;
+    user.Apellido = inputUsuario.Apellido;
+    user.Email = inputUsuario.Email;
+    user.Telefono = inputUsuario.Telefono;
+    user.FechaNacimiento = inputUsuario.FechaNacimiento;
+    user.CedulaIdentidad = inputUsuario.CedulaIdentidad;
 
     await db.SaveChangesAsync();
 
@@ -97,9 +97,9 @@ app.MapPut("/personas/modificar/{id}", async (int id, Persona inputuser, Persona
 
 app.MapDelete("/personas/eliminar/{id}", async (int id, PersonaDb db) =>
 {
-    if (await db.usuario.FindAsync(id) is Persona user)
+    if (await db.Usuarios.FindAsync(id) is Persona user)
     {
-        db.usuario.Remove(user);
+        db.Usuarios.Remove(user);
         await db.SaveChangesAsync();
         return Results.Ok(user);
     }
@@ -112,7 +112,7 @@ public class Persona
 {
     [Key]
     public int id { get; set; }
-    public string? CedulaIdentidad { get; set; }
+    public int CedulaIdentidad { get; set; }
     public string? Nombre { get; set; }
     public string? Apellido { get; set; }
     public string? Email { get; set; }
@@ -146,5 +146,5 @@ class PersonaDb : DbContext
     public PersonaDb(DbContextOptions<PersonaDb> options)
         : base(options) { }
 
-    public DbSet<Persona> usuario => Set<Persona>();
+    public DbSet<Persona> Usuarios => Set<Persona>();
 }
