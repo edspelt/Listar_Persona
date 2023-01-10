@@ -31,7 +31,7 @@ builder.Services.AddSwaggerGen(options =>
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
-builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+builder.Services.AddDbContext<PersonaDb>(opt => opt.UseInMemoryDatabase("personaList"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 //configure the http request pipeline
@@ -50,25 +50,25 @@ app.UseHttpsRedirection();
 app.MapGet("/", () => Results.Redirect("swagger", true))
     .ExcludeFromDescription();
 
-app.MapGet("/personas/listar", async (TodoDb db) =>
-    await db.Todos.ToListAsync());
+app.MapGet("/personas/listar", async (PersonaDb db) =>
+    await db.usuario.ToListAsync());
 
-app.MapGet("/personas/buscar/{id}", async (int id, TodoDb db) =>
-    await db.Todos.FindAsync(id)
-    is Persona todo
-       ? Results.Ok(todo)
+app.MapGet("/personas/buscar/{id}", async (int id, PersonaDb db) =>
+    await db.usuario.FindAsync(id)
+    is Persona user
+       ? Results.Ok(user)
        : Results.NotFound());
 
-app.MapPost("/personas/agregar", async (Persona todo, TodoDb db) =>
+app.MapPost("/personas/agregar", async (Persona user, PersonaDb db) =>
 {
     ParamCliente _pru = new ParamCliente();
 
-    FluentValidation.Results.ValidationResult result = _pru.Validate(todo);
+    FluentValidation.Results.ValidationResult result = _pru.Validate(user);
     if (result.IsValid)
     {
-        db.Todos.Add(todo);
+        db.usuario.Add(user);
         await db.SaveChangesAsync();
-        return Results.Created($"/personas/{todo.CedulaIdentidad}", todo);
+        return Results.Created($"/personas/{user.CedulaIdentidad}", user);
     }
     else
     {
@@ -77,31 +77,31 @@ app.MapPost("/personas/agregar", async (Persona todo, TodoDb db) =>
 
 });
 
-app.MapPut("/personas/modificar/{id}", async (int id, Persona inputTodo, TodoDb db) =>
+app.MapPut("/personas/modificar/{id}", async (int id, Persona inputuser, PersonaDb db) =>
 {
-    var todo = await db.Todos.FindAsync(id);
+    var user = await db.usuario.FindAsync(id);
 
-    if (todo is null) return Results.NotFound();
+    if (user is null) return Results.NotFound();
 
-    todo.Nombre = inputTodo.Nombre;
-    todo.Apellido = inputTodo.Apellido;
-    todo.Email = inputTodo.Email;
-    todo.Telefono = inputTodo.Telefono;
-    todo.FechaNacimiento = inputTodo.FechaNacimiento;
-    todo.CedulaIdentidad = inputTodo.CedulaIdentidad;
+    user.Nombre = inputuser.Nombre;
+    user.Apellido = inputuser.Apellido;
+    user.Email = inputuser.Email;
+    user.Telefono = inputuser.Telefono;
+    user.FechaNacimiento = inputuser.FechaNacimiento;
+    user.CedulaIdentidad = inputuser.CedulaIdentidad;
 
     await db.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
-app.MapDelete("/personas/eliminar/{id}", async (int id, TodoDb db) =>
+app.MapDelete("/personas/eliminar/{id}", async (int id, PersonaDb db) =>
 {
-    if (await db.Todos.FindAsync(id) is Persona todo)
+    if (await db.usuario.FindAsync(id) is Persona user)
     {
-        db.Todos.Remove(todo);
+        db.usuario.Remove(user);
         await db.SaveChangesAsync();
-        return Results.Ok(todo);
+        return Results.Ok(user);
     }
     return Results.NotFound();
 });
@@ -141,10 +141,10 @@ public class Error
 
 }
 
-class TodoDb : DbContext
+class PersonaDb : DbContext
 {
-    public TodoDb(DbContextOptions<TodoDb> options)
+    public PersonaDb(DbContextOptions<PersonaDb> options)
         : base(options) { }
 
-    public DbSet<Persona> Todos => Set<Persona>();
+    public DbSet<Persona> usuario => Set<Persona>();
 }
